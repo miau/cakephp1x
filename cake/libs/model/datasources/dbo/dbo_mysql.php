@@ -88,7 +88,8 @@ class DboMysqlBase extends DboSource {
 	var $tableParameters = array(
 		'charset' => array('value' => 'DEFAULT CHARSET', 'quote' => false, 'join' => '=', 'column' => 'charset'),
 		'collate' => array('value' => 'COLLATE', 'quote' => false, 'join' => '=', 'column' => 'Collation'),
-		'engine' => array('value' => 'ENGINE', 'quote' => false, 'join' => '=', 'column' => 'Engine')
+		'engine' => array('value' => 'ENGINE', 'quote' => false, 'join' => '=', 'column' => 'Engine'),
+		'comment' => array('value' => 'COMMENT', 'quote' => true, 'join' => '=', 'column' => 'Comment')
 	);
 
 /**
@@ -122,7 +123,7 @@ class DboMysqlBase extends DboSource {
 			return $cache;
 		}
 		$fields = false;
-		$cols = $this->query('DESCRIBE ' . $this->fullTableName($model));
+		$cols = $this->query('SHOW FULL COLUMNS FROM ' . $this->fullTableName($model));
 
 		foreach ($cols as $column) {
 			$colKey = array_keys($column);
@@ -135,6 +136,7 @@ class DboMysqlBase extends DboSource {
 					'null' => ($column[0]['Null'] == 'YES' ? true : false),
 					'default' => $column[0]['Default'],
 					'length' => $this->length($column[0]['Type']),
+					'comment' => $column[0]['Comment'],
 				);
 				if (!empty($column[0]['Key']) && isset($this->index[$column[0]['Key']])) {
 					$fields[$column[0]['Field']]['key'] = $this->index[$column[0]['Key']];
@@ -438,6 +440,9 @@ class DboMysqlBase extends DboSource {
 					if ($charset) {
 						$tables[$row['TABLES']['Name']]['charset'] = $charset;
 					}
+				}
+				if (isset($row['TABLES']['Comment'])) {
+					$tables[$row['TABLES']['Name']]['comment'] = $row['TABLES']['Comment'];
 				}
 			}
 			if (is_string($name)) {
